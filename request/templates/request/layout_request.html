@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+<title>{% block title %} Buydata {% endblock %}</title>
+
+
+   {% block extra_head %} {%endblock %}
+</head>
+<body>
+Body<br/>
+
+<hr/>
+<h1>{{msg}}</h1>
+<hr/>
+
+<form id="once" action="" method="post" enctype="multipart/form-data">
+    {%csrf_token %}
+    영상 업로드 :
+    <input type="file" id="files3" name="files_video" accept = "*" />
+
+    사진 업로드 :
+    <input type="file" id="files2" name="files_face" accept = "image/*" multiple/>
+
+
+
+    <input type="submit" id="file"  name="file"   value="등록!" />
+
+    <input type="submit" id="download"  name="download"   value="다운로드" />
+
+</form>
+<hr/>
+{% block content %}
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}
+</body>
+<footer class="footer">
+
+
+       <p>© 2018 Copyright by NALBI Inc. </p>
+
+</footer>
+</html>
