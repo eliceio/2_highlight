@@ -111,6 +111,7 @@ def sound_ex(high):
         file_name = BASE_DIR + "/request/data/output/" + episode + "" + str(idx) + ".mp4"
         wav_name = BASE_DIR + "/request/data/output/" + episode + "" + str(idx) + ".wav"
         # print(os.path.isfile(file_name))
+        print("test = ",file_name)
         if os.path.isfile(file_name) == False:
             ffmpeg_extract_subclip(video_name, start, end, targetname=file_name)
             clip.subclip(start, end).audio.write_audiofile(wav_name)
