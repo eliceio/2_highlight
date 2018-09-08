@@ -233,7 +233,7 @@ def index(request):
                     if (len(face_recognition.face_encodings(image))>0):
                         face_encoding = face_recognition.face_encodings(image)[0]
                     else:
-                        return render(request, 'request/message.html', {'msg': "잘못된 얼굴사진!"})
+                        return render(request, 'request/message.html', {'msg': "error!"})
                     known_faces.append(face_encoding)
                     known_faces_name.append(face_img.fname)
 
@@ -296,10 +296,10 @@ def index(request):
                     output_movie.write(frame)
                 high.status = 1
                 high.save()
-            return render(request, 'request/layout_request.html',{'msg': "작업 완료"} )
+            return render(request, 'request/layout_request.html',{'msg': "complete"} )
             """
             sound_ex(high)
-            return render(request, 'request/layout_request.html', {'msg': "작업 완료"})
+            return render(request, 'request/layout_request.html', {'msg': "complete"})
         elif ('download' in request.POST):
             print("download")
             high_list = Highlight.objects.filter(status=1)
