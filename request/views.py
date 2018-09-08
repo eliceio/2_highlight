@@ -36,7 +36,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import specgram
 import soundfile as sf
+import subprocess as sp
 
+from moviepy.tools import subprocess_call
+from moviepy.config import get_setting
 
 
 def extract_feature(file_name):
@@ -93,6 +96,22 @@ def one_hot_encode(labels):
     return one_hot_encode
 
 
+def ffmpeg_extract_subclip22(filename, t1, t2, targetname=None):
+    """ Makes a new video file playing video file ``filename`` between
+        the times ``t1`` and ``t2``. """
+    name, ext = os.path.splitext(filename)
+    if not targetname:
+        T1, T2 = [int(1000 * t) for t in [t1, t2]]
+        targetname = "%sSUB%d_%d.%s" % (name, T1, T2, ext)
+
+    cmd = [get_setting("FFMPEG_BINARY"), "-y",
+           "-i", filename,
+           "-ss", "%0.2f" % t1,
+           "-t", "%0.2f" % (t2 - t1),
+           "-vcodec", "copy", "-acodec", "copy", targetname]
+
+    subprocess_call(cmd)
+
 def sound_ex(high):
     video_name = BASE_DIR + high.file_in.url
     print("bd = ",BASE_DIR)
@@ -101,7 +120,7 @@ def sound_ex(high):
 
     idx = 1
     clip = VideoFileClip(video_name)
-
+    print("clip = ",clip)
     length = clip.duration
     start = 0  # except begin_again is 10
     end = start + duration
@@ -114,12 +133,12 @@ def sound_ex(high):
         print("test1 = ",file_name)
         print("test2 = ", os.path.isfile(file_name))
         if os.path.isfile(file_name) == False:
-            print("test3 = ")
-            ffmpeg_extract_subclip(video_name, start, end, targetname=file_name)
+            print("test3 = ",video_name)
+            ffmpeg_extract_subclip22(video_name, start, end, targetname=file_name)
             print("test4 = ")
             clip.subclip(start, end).audio.write_audiofile(wav_name)
             print("test5 = ")
-        
+
         start = end
         end = start + duration
         if end >= length:
