@@ -9,7 +9,7 @@ from io import BytesIO
 import time
 import zipfile
 from django.http import HttpResponse
-
+import sys
 import os
 import ffmpeg
 import imageio
@@ -41,6 +41,9 @@ import subprocess as sp
 from moviepy.tools import subprocess_call
 from moviepy.config import get_setting
 
+PIPE = -1
+STDOUT = -2
+DEVNULL = -3
 
 def extract_feature(file_name):
     X, sample_rate = sf.read(file_name, dtype='float32')
@@ -96,6 +99,46 @@ def one_hot_encode(labels):
     return one_hot_encode
 
 
+def sys_write_flush22(s):
+    """ Writes and flushes without delay a text in the console """
+    # Reason for not using `print` is that in some consoles "print"
+    # commands get delayed, while stdout.flush are instantaneous,
+    # so this method is better at providing feedback.
+    # See https://github.com/Zulko/moviepy/pull/485
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+def verbose_print(verbose, s):
+    """ Only prints s (with sys_write_flush) if verbose is True."""
+    if verbose:
+        sys_write_flush22(s)
+
+def subprocess_call22(cmd, verbose=True, errorprint=True):
+    """ Executes the given subprocess command."""
+
+    verbose_print(verbose, "\n[MoviePy] Running:\n>>> "+ " ".join(cmd))
+
+    popen_params = {"stdout": DEVNULL,
+                    "stderr": sp.PIPE,
+                    "stdin": DEVNULL}
+
+    if os.name == "nt":
+        popen_params["creationflags"] = 0x08000000
+
+    proc = sp.Popen(cmd, **popen_params)
+
+    out, err = proc.communicate() # proc.wait()
+    proc.stderr.close()
+
+    if proc.returncode:
+        verbose_print(errorprint, "\n[MoviePy] This command returned an error !")
+        # raise IOError(err.decode('utf8'))
+        raise IOError(err.decode('utf8'))
+    else:
+        verbose_print(verbose, "\n... command successful.\n")
+
+    del proc
+
 def ffmpeg_extract_subclip22(filename, t1, t2, targetname=None):
     """ Makes a new video file playing video file ``filename`` between
         the times ``t1`` and ``t2``. """
@@ -112,7 +155,7 @@ def ffmpeg_extract_subclip22(filename, t1, t2, targetname=None):
            "-t", "%0.2f" % (t2 - t1),
            "-vcodec", "copy", "-acodec", "copy", targetname]
     print("test43 = ")
-    subprocess_call(cmd)
+    subprocess_call22(cmd)
     print("test44 = ")
 
 def sound_ex(high):
