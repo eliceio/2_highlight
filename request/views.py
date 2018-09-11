@@ -13,6 +13,7 @@ import sys
 import os
 import ffmpeg
 import imageio
+import shutil
 
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
@@ -223,6 +224,7 @@ def sound_ex(high):
             rst.append('none')
 
     filenames = map(lambda x: x[x.find('output') + 7:], filenames)  # wav path -> wav file name
+    print("filenames = ",filenames)
     id_label = dict(zip(filenames, rst))
 
     IDs = list(id_label.keys())
@@ -285,6 +287,8 @@ def index(request):
                 # Open the input movie file
                 print("file url",high.file_in.url)
                 print("BASE_DIR url", BASE_DIR)
+            if not os.path.isdir(BASE_DIR + "/request/data/output/"):
+                os.mkdir(BASE_DIR + "/request/data/output/")
             sound_ex(high)
 
             input_movie = cv2.VideoCapture(BASE_DIR + high.file_out1.url)
@@ -314,7 +318,7 @@ def index(request):
             face_encodings = []
             face_names = []
             frame_number = 0
-
+            min_cnt = 0
             while True:
                 # Grab a single frame of video
                 ret, frame = input_movie.read()
@@ -323,51 +327,52 @@ def index(request):
                 # Quit when the input video file ends
                 if not ret:
                     break
+                if min_cnt == 20:
+                    # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+                    rgb_frame = frame[:, :, ::-1]
 
-                # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-                rgb_frame = frame[:, :, ::-1]
+                    # Find all the faces and face encodings in the current frame of video
+                    face_locations = face_recognition.face_locations(rgb_frame)
+                    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-                # Find all the faces and face encodings in the current frame of video
-                face_locations = face_recognition.face_locations(rgb_frame)
-                face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+                    face_names = []
+                    for face_encoding in face_encodings:
+                        # See if the face is a match for the known face(s)
+                        match = face_recognition.compare_faces(known_faces, face_encoding, tolerance=0.50)
 
-                face_names = []
-                for face_encoding in face_encodings:
-                    # See if the face is a match for the known face(s)
-                    match = face_recognition.compare_faces(known_faces, face_encoding, tolerance=0.50)
+                        # If you had more than 2 faces, you could make this logic a lot prettier
+                        # but I kept it simple for the demo
+                        name = None
+                        i = 0
+                        print("len match = ", len(match))
+                        print("len match = ", match)
+                        if len(match) > 0:
+                            for m in match:
+                                print("i = ", i)
+                                print("m = ", m)
+                                if m:
+                                    name = known_faces_name[i]
+                                i = i + 1
+                            face_names.append(name)
+                    for (top, right, bottom, left), name in zip(face_locations, face_names):
+                        if not name:
+                            continue
 
-                    # If you had more than 2 faces, you could make this logic a lot prettier
-                    # but I kept it simple for the demo
-                    name = None
-                    i = 0
-                    print("len match = ", len(match))
-                    print("len match = ", match)
-                    if len(match) > 0:
-                        for m in match:
-                            print("i = ", i)
-                            print("m = ", m)
-                            if m:
-                                name = known_faces_name[i]
-                            i = i + 1
-                        face_names.append(name)
-                for (top, right, bottom, left), name in zip(face_locations, face_names):
-                    if not name:
-                        continue
+                        # Draw a box around the face
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
-                    # Draw a box around the face
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-                    # Draw a label with a name below the face
-                    cv2.rectangle(frame, (left, bottom - 25), (right, bottom), (0, 0, 255), cv2.FILLED)
-                    font = cv2.FONT_HERSHEY_DUPLEX
-                    cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
-
+                        # Draw a label with a name below the face
+                        cv2.rectangle(frame, (left, bottom - 25), (right, bottom), (0, 0, 255), cv2.FILLED)
+                        font = cv2.FONT_HERSHEY_DUPLEX
+                        cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
+                    min_cnt = 0
                 # Write the resulting image to the output video file
                 print("Writing frame {} / {}".format(frame_number, length))
                 output_movie.write(frame)
+                min_cnt = min_cnt + 1
             high.status = 1
             high.save()
-
+            shutil.rmtree(BASE_DIR + "/request/data/output/", True)
             return render(request, 'request/layout_request.html', {'msg': "complete"})
         elif ('download' in request.POST):
             print("download")
