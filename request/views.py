@@ -196,8 +196,12 @@ def sound_ex(high):
             rst.append('none')
 
     # filenames = map(lambda x: x[x.find('output') + 7:], filenames)  # wav path -> wav file name
-    filename_2 = map(lambda x: x[x.find(BASE_DIR + "/request/audio-classification/data") + 37:], filenames)  # wav path -> wav file name
+    filename_2 = map(lambda x: x[x.find(BASE_DIR + "/request/audio-classification/data") + 70:], filenames)  # wav path -> wav file name
+    filename_3 = list(map(lambda x: x[x.find(BASE_DIR + "/request/audio-classification/data") + 70:],
+                     filenames))  # wav path -> wav file name
+
     print("filenames = ",filename_2)
+    print("filenames = ", filename_3)
     id_label = dict(zip(filename_2, rst))
 
     IDs = list(id_label.keys())
